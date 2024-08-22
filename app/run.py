@@ -8,7 +8,7 @@ from nltk.tokenize import word_tokenize
 
 from flask import Flask
 from flask import render_template, request, jsonify
-from plotly.graph_objs import Bar
+from plotly.graph_objs import Bar, Histogram
 # from sklearn.externals import joblib
 from sqlalchemy import create_engine
 
@@ -44,6 +44,10 @@ def index():
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
 
+    message_length = df['message'].map(len)
+
+    target_sum = df.drop(columns=['id', 'message', 'original', 'genre']).sum(axis=0).sort_values(ascending=False)
+
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -62,6 +66,44 @@ def index():
                 },
                 'xaxis': {
                     'title': "Genre"
+                }
+            }
+        },
+        {
+            'data': [
+                Histogram(
+                    x=message_length,
+                    xbins=dict(start=0,
+                               end=300,
+                               size=10)
+                )
+            ],
+
+            'layout': {
+                'title': 'Histogram of Message Length',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "message length"
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=target_sum.index,
+                    y=target_sum.values
+                )
+            ],
+
+            'layout': {
+                'title': 'Counts of categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Category"
                 }
             }
         }
