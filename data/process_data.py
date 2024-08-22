@@ -39,6 +39,9 @@ def clean_data(df) -> pd.DataFrame:
 
 
 def save_data(df, database_filename):
+    """
+    save the data into a sql db
+    """
     engine = create_engine(f'sqlite:///{database_filename}.db')
     df.to_sql(database_filename, engine, index=False)
 

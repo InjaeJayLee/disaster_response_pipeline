@@ -22,7 +22,10 @@ nltk.download('punkt')
 
 
 def load_data(database_filepath) -> tuple[pd.Series, pd.DataFrame, list[str]]:
-    engine = create_engine(f'sqlite:///{database_filepath}.db')
+    """
+    load sql tabel data and return features and target with target column names
+    """
+    engine = create_engine(f'sqlite:///../data/{database_filepath}.db')
     df = pd.read_sql(database_filepath, con=engine)
     X = df['message']
     Y = df.drop(columns=['id', 'message', 'original', 'genre'])
@@ -30,6 +33,9 @@ def load_data(database_filepath) -> tuple[pd.Series, pd.DataFrame, list[str]]:
 
 
 def tokenize(text) -> list[str]:
+    """
+    tokenize text and change with lower case
+    """
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
     tokens = [t for t in tokens if t not in stopwords.words("english")]
