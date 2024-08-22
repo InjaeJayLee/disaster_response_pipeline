@@ -18,7 +18,7 @@ def load_data(messages_filepath, categories_filepath) -> pd.DataFrame:
 
 def clean_data(df) -> pd.DataFrame:
     """
-    Clean categorical data in 'categories' column and remove duplicate rows
+    Extract categorical data in 'categories' column, let them have values of only either 0 or 1 and remove duplicate rows
     :param df: a DataFrame to clean
     :return: a result of the cleaned DataFrame
     """
@@ -30,7 +30,7 @@ def clean_data(df) -> pd.DataFrame:
     categories.columns = category_colnames
     for column in categories:
         categories[column] = categories[column].apply(lambda x: x.split('-')[1])
-        categories[column] = categories[column].astype(int)
+        categories[column] = categories[column].astype(int).apply(lambda x: 1 if x > 1 else x)
     df.drop(columns=['categories'], inplace=True)
     df = pd.concat([df, categories], axis=1)
 
@@ -43,7 +43,7 @@ def save_data(df, database_filename):
     save the data into a sql db
     """
     engine = create_engine(f'sqlite:///{database_filename}.db')
-    df.to_sql(database_filename, engine, index=False)
+    df.to_sql(database_filename, engine, index=False, if_exists='replace')
 
 
 def main():
