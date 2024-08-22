@@ -1,24 +1,64 @@
 import sys
+import joblib
+
+import pandas as pd
+from sqlalchemy import create_engine
+import sklearn
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import classification_report
+
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+
+nltk.download('wordnet')
+nltk.download('stopwords')
+nltk.download('punkt')
 
 
-def load_data(database_filepath):
-    pass
+def load_data(database_filepath) -> tuple[pd.Series, pd.DataFrame, list[str]]:
+    engine = create_engine(f'sqlite:///{database_filepath}.db')
+    df = pd.read_sql(database_filepath, con=engine)
+    X = df['message']
+    Y = df.drop(columns=['id', 'message', 'original', 'genre'])
+    return X, Y, Y.columns.values
 
 
-def tokenize(text):
-    pass
+def tokenize(text) -> list[str]:
+    tokens = word_tokenize(text)
+    lemmatizer = WordNetLemmatizer()
+    tokens = [t for t in tokens if t not in stopwords.words("english")]
+
+    clean_tokens = []
+    for tok in tokens:
+        clean_tok = lemmatizer.lemmatize(tok).lower().strip()
+        clean_tokens.append(clean_tok)
+
+    return clean_tokens
 
 
 def build_model():
-    pass
+    return Pipeline([
+        ('vect', TfidfVectorizer(tokenizer=tokenize)),
+        ('clf', MultiOutputClassifier(RandomForestClassifier(max_depth=2, n_estimators=10)))
+    ])
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    pass
+    Y_pred_test = model.predict(X_test)
+    for i, col in enumerate(category_names):
+        print(col)
+        print(classification_report(Y_test[col].values, Y_pred_test[:, i]))
+        print('-------------------------------------------------------')
 
 
 def save_model(model, model_filepath):
-    pass
+    joblib.dump(model, model_filepath)
 
 
 def main():
