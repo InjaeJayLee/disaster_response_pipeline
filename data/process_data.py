@@ -1,16 +1,46 @@
 import sys
 
+import pandas as pd
+from sqlalchemy import create_engine
 
-def load_data(messages_filepath, categories_filepath):
-    pass
+
+def load_data(messages_filepath, categories_filepath) -> pd.DataFrame:
+    """
+    Load messages and categoreis and returns a merged DataFrame of them
+    :param messages_filepath: messages data file path
+    :param categories_filepath: categories data file path
+    :return: a result of the merged DataFrame
+    """
+    messages = pd.read_csv(messages_filepath)
+    categories = pd.read_csv(categories_filepath)
+    return pd.merge(messages, categories, how='inner', on='id')
 
 
-def clean_data(df):
-    pass
+def clean_data(df) -> pd.DataFrame:
+    """
+    Clean categorical data in 'categories' column and remove duplicate rows
+    :param df: a DataFrame to clean
+    :return: a result of the cleaned DataFrame
+    """
+
+    # clean categorical data
+    categories = df['categories'].str.split(';', expand=True)
+    row = categories.loc[0]
+    category_colnames = row.apply(lambda x: x.split('-')[0])
+    categories.columns = category_colnames
+    for column in categories:
+        categories[column] = categories[column].apply(lambda x: x.split('-')[1])
+        categories[column] = categories[column].astype(int)
+    df.drop(columns=['categories'], inplace=True)
+    df = pd.concat([df, categories], axis=1)
+
+    # drop duplicates
+    return df.drop_duplicates()
 
 
 def save_data(df, database_filename):
-    pass
+    engine = create_engine(f'sqlite:///{database_filename}.db')
+    df.to_sql(database_filename, engine, index=False)
 
 
 def main():
